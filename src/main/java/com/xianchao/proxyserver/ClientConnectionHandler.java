@@ -33,6 +33,7 @@ public record ClientConnectionHandler(Socket clientSocket) implements Connection
     private void handleClientRequest() throws IOException {
         // 读取客户端的第一行请求
         String requestLine = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8)).readLine();
+        System.out.println("Received request line: " + requestLine);
         if (requestLine == null || requestLine.isEmpty()) {
             System.err.println("Invalid request line: " + requestLine);
             return;
