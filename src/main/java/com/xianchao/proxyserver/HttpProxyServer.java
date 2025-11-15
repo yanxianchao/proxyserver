@@ -12,7 +12,7 @@ import java.net.Socket;
  */
 @Component
 public class HttpProxyServer implements CommandLineRunner {
-    private static final int DEFAULT_PORT = 6666;
+    private static final int DEFAULT_PORT = 3000;
     private volatile ServerSocket serverSocket;
 
     @Override
