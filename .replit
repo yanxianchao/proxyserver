@@ -1,0 +1,21 @@
+modules = ["java-graalvm22.3"]
+[agent]
+expertMode = true
+
+[nix]
+channel = "stable-25_05"
+
+[workflows]
+
+[[workflows.workflow]]
+name = "pr"
+mode = "sequential"
+author = 48788709
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "mvn clean package -Dmaven.test.skip=true"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "java -jar target/proxyserver-1.0.0.jar"
