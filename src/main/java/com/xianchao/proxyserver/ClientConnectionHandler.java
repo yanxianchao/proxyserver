@@ -32,8 +32,8 @@ public record ClientConnectionHandler(Socket clientSocket) implements Connection
      */
     private void handleClientRequest() throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8));
-        while (!clientSocket.isClosed()) {
-            String requestLine = reader.readLine();
+        String requestLine;
+        while (!clientSocket.isClosed() && (requestLine = reader.readLine()) != null) {
             System.out.println("收到请求: " + requestLine);
         }
         /**
