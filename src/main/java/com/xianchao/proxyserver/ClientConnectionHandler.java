@@ -18,7 +18,7 @@ public record ClientConnectionHandler(Socket clientSocket) implements Connection
         try {
             System.out.println("New client connected: " + clientSocket.getInetAddress().getHostAddress());
             handleClientRequest();
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("Error handling client request: " + e.getMessage());
         } finally {
             closeQuietly(clientSocket);
