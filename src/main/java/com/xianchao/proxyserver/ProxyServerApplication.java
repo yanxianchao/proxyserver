@@ -6,10 +6,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import java.io.IOException;
 
 @SpringBootApplication
-public class ProxyserverApplication {
+public class ProxyServerApplication {
 
     public static void main(String[] args) throws IOException {
-        SpringApplication.run(ProxyserverApplication.class, args);
+        SpringApplication.run(ProxyServerApplication.class, args);
     }
 
 }
