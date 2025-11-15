@@ -49,8 +49,6 @@ public class HttpProxyServer implements CommandLineRunner {
                 System.err.println("Error in proxy server: " + e.getMessage());
             }
         });
-
-        serverThread.setDaemon(false);
         serverThread.start();
     }
 
