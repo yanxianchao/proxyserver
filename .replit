@@ -27,8 +27,4 @@ args = "java -jar target/proxyserver-1.0.0.jar"
 
 [[ports]]
 localPort = 3000
-externalPort = 80
-
-[[ports]]
-localPort = 8080
 externalPort = 3000
