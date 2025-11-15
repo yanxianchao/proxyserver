@@ -31,9 +31,16 @@ public record ClientConnectionHandler(Socket clientSocket) implements Connection
      * @throws IOException IO异常
      */
     private void handleClientRequest() throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8));
+        while (!clientSocket.isClosed()) {
+            String requestLine = reader.readLine();
+            System.out.println("收到请求: " + requestLine);
+        }
+        /**
         // 读取客户端的第一行请求
         String requestLine = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8)).readLine();
         System.out.println("收到请求: " + requestLine);
+
         if (requestLine == null || requestLine.isEmpty()) {
             System.err.println("Invalid request line: " + requestLine);
             return;
@@ -48,6 +55,7 @@ public record ClientConnectionHandler(Socket clientSocket) implements Connection
 
         // 连接目标服务器并转发数据
         connectAndRelayData(hostPort[0], Integer.parseInt(hostPort[1]));
+         **/
     }
 
     /**
