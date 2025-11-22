@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 /**
  * 客户端连接处理器
@@ -21,7 +22,9 @@ public record ClientConnectionHandler(Socket clientSocket) implements Connection
             // 解析目标主机和端口
             String[] hostPort = parseTargetHost(getRequestLine());
             // 创建服务套接字
+            System.out.println("start connected to target server: " + Arrays.toString(hostPort));
             Socket serverSocket = new Socket(hostPort[0], Integer.parseInt(hostPort[1]));
+            System.out.println("Connected to target server: " + serverSocket.getInetAddress().getHostAddress());
             // 发送连接成功的响应给客户端
             sendConnectionEstablishedResponse();
             System.out.println("Connection established.");
