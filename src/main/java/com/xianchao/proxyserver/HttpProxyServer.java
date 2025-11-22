@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -47,9 +48,10 @@ public class HttpProxyServer implements CommandLineRunner {
             try {
                 while (!serverSocket.isClosed()) {
                     Socket clientSocket = serverSocket.accept();
+                    clientSocket.getOutputStream().write("HTTP/1.1 200 OK\r\n\r\n".getBytes(StandardCharsets.UTF_8));
                     // 为每个客户端连接创建一个新的处理器
-                    ConnectionHandler handler = new ClientConnectionHandler(clientSocket,workerThreadPool);
-                    bossThreadPool.execute(handler);
+                    //ConnectionHandler handler = new ClientConnectionHandler(clientSocket,workerThreadPool);
+                    //bossThreadPool.execute(handler);
                 }
             } catch (IOException e) {
                 System.err.println("Error accepting client connection: " + e.getMessage());
