@@ -24,15 +24,15 @@ public record ClientConnectionHandler(Socket clientSocket, java.util.concurrent.
             String[] hostPort = parseTargetHost(getRequestLine());
             // 创建服务套接字
             System.out.println("start connected to target server: " + Arrays.toString(hostPort));
-            Socket serverSocket = new Socket(hostPort[0], Integer.parseInt(hostPort[1]));
-            System.out.println("Connected to target server: " + serverSocket.getInetAddress().getHostAddress());
+            //Socket serverSocket = new Socket(hostPort[0], Integer.parseInt(hostPort[1]));
+            //System.out.println("Connected to target server: " + serverSocket.getInetAddress().getHostAddress());
             // 发送连接成功的响应给客户端
             sendConnectionEstablishedResponse();
             System.out.println("Connection established.");
             // 创建并启动客户端到服务器的数据传输线程
-            workerThreadPool.execute(createRelayThread(clientSocket, serverSocket));
+            //workerThreadPool.execute(createRelayThread(clientSocket, serverSocket));
             // 创建并启动服务器到客户端的数据传输线程
-            workerThreadPool.execute(createRelayThread(serverSocket, clientSocket));
+            //workerThreadPool.execute(createRelayThread(serverSocket, clientSocket));
         } catch (Exception e) {
             System.err.println("Error handling client request: " + e.getMessage());
             closeQuietly(clientSocket);
