@@ -11,7 +11,8 @@ import java.util.Arrays;
  * 客户端连接处理器
  * 负责处理单个客户端连接的所有操作
  */
-public record ClientConnectionHandler(Socket clientSocket) implements ConnectionHandler {
+public record ClientConnectionHandler(Socket clientSocket, java.util.concurrent.ThreadPoolExecutor workerThreadPool)
+        implements ConnectionHandler {
 
     private static final int BUFFER_SIZE = 8192;
 
@@ -29,12 +30,9 @@ public record ClientConnectionHandler(Socket clientSocket) implements Connection
             sendConnectionEstablishedResponse();
             System.out.println("Connection established.");
             // 创建并启动客户端到服务器的数据传输线程
-            Thread clientToServerThread = createRelayThread(clientSocket, serverSocket);
+            workerThreadPool.execute(createRelayThread(clientSocket, serverSocket));
             // 创建并启动服务器到客户端的数据传输线程
-            Thread serverToClientThread = createRelayThread(serverSocket, clientSocket);
-            // 启动线程
-            clientToServerThread.start();
-            serverToClientThread.start();
+            workerThreadPool.execute(createRelayThread(serverSocket, clientSocket));
         } catch (Exception e) {
             System.err.println("Error handling client request: " + e.getMessage());
             closeQuietly(clientSocket);
@@ -85,8 +83,8 @@ public record ClientConnectionHandler(Socket clientSocket) implements Connection
      * @param destination 目标套接字
      * @return 数据转发线程
      */
-    private Thread createRelayThread(Socket source, Socket destination) {
-        return new Thread(() -> {
+    private Runnable createRelayThread(Socket source, Socket destination) {
+        return () -> {
             try {
                 byte[] buffer = new byte[BUFFER_SIZE];
                 int bytesRead;
@@ -100,7 +98,7 @@ public record ClientConnectionHandler(Socket clientSocket) implements Connection
                 closeQuietly(source);
                 closeQuietly(destination);
             }
-        });
+        };
     }
 
     /**

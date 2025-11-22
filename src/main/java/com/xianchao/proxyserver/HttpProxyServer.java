@@ -43,20 +43,20 @@ public class HttpProxyServer implements CommandLineRunner {
         System.out.println("HTTP Proxy server started on port " + port);
         // 添加关闭钩子，在JVM关闭时停止代理服务器
         Runtime.getRuntime().addShutdownHook(new Thread(this::stopServer));
-        bossThreadPool.execute(() -> {
+        new Thread(()->{
             try {
                 while (!serverSocket.isClosed()) {
                     Socket clientSocket = serverSocket.accept();
                     // 为每个客户端连接创建一个新的处理器
-                    ConnectionHandler handler = new ClientConnectionHandler(clientSocket);
-                    workerThreadPool.execute(handler);
+                    ConnectionHandler handler = new ClientConnectionHandler(clientSocket,workerThreadPool);
+                    bossThreadPool.execute(handler);
                 }
             } catch (IOException e) {
                 System.err.println("Error accepting client connection: " + e.getMessage());
             } finally {
                 stopServer();
             }
-        });
+        }).start();
     }
 
     /**
