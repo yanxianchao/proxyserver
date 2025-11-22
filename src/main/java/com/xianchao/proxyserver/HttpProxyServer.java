@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -54,8 +55,7 @@ public class HttpProxyServer implements CommandLineRunner {
                     bossThreadPool.execute(handler);
                 }
             } catch (IOException e) {
-                System.err.println("Error accepting client connection: " + e.getMessage());
-                e.printStackTrace();
+                System.err.println("Error accepting client connection: " + Arrays.toString(e.getStackTrace()));
             } finally {
                 stopServer();
             }
