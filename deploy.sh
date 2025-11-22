@@ -35,7 +35,7 @@ print_info "当前目录: $(pwd)"
 
 # 1. 更新代码
 print_info "正在更新代码..."
-git pull origin main
+git pull origin master
 check_result "代码更新失败"
 
 # 2. 停止正在运行的应用
