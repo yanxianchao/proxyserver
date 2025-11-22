@@ -6,14 +6,25 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * HTTP代理服务器主类
  */
 @Component
 public class HttpProxyServer implements CommandLineRunner {
+
     private static final int DEFAULT_PORT = 3000;
     private volatile ServerSocket serverSocket;
+
+    private static final ThreadPoolExecutor bossThreadPool =
+            new ThreadPoolExecutor(1, 1, 0L, MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+
+    private static final ThreadPoolExecutor workerThreadPool =
+            new ThreadPoolExecutor(10, 10, 0L, MILLISECONDS, new LinkedBlockingQueue<Runnable>());
 
     @Override
     public void run(String... args) throws Exception {
@@ -27,29 +38,25 @@ public class HttpProxyServer implements CommandLineRunner {
      * @throws IOException IO异常
      */
     public void startServer(int port) throws IOException {
-
         if (serverSocket != null) return;
-
         serverSocket = new ServerSocket(port);
-
-        Runtime.getRuntime().addShutdownHook(new Thread(this::stopServer));
-
         System.out.println("HTTP Proxy server started on port " + port);
-
-        Thread serverThread = new Thread(() -> {
+        // 添加关闭钩子，在JVM关闭时停止代理服务器
+        Runtime.getRuntime().addShutdownHook(new Thread(this::stopServer));
+        bossThreadPool.execute(() -> {
             try {
                 while (!serverSocket.isClosed()) {
                     Socket clientSocket = serverSocket.accept();
                     // 为每个客户端连接创建一个新的处理器
                     ConnectionHandler handler = new ClientConnectionHandler(clientSocket);
-                    Thread thread = new Thread(handler);
-                    thread.start();
+                    workerThreadPool.execute(handler);
                 }
             } catch (IOException e) {
-                System.err.println("Error in proxy server: " + e.getMessage());
+                System.err.println("Error accepting client connection: " + e.getMessage());
+            } finally {
+                stopServer();
             }
         });
-        serverThread.start();
     }
 
     /**
@@ -66,5 +73,8 @@ public class HttpProxyServer implements CommandLineRunner {
                 System.err.println("Error closing server socket: " + e.getMessage());
             }
         }
+        // 关闭线程池
+        bossThreadPool.shutdown();
+        workerThreadPool.shutdown();
     }
 }

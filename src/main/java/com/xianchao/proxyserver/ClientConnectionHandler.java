@@ -11,51 +11,39 @@ import java.nio.charset.StandardCharsets;
  * 负责处理单个客户端连接的所有操作
  */
 public record ClientConnectionHandler(Socket clientSocket) implements ConnectionHandler {
+
     private static final int BUFFER_SIZE = 8192;
 
     @Override
     public void run() {
         try {
             System.out.println("New client connected: " + clientSocket.getInetAddress().getHostAddress());
-            handleClientRequest();
+            // 解析目标主机和端口
+            String[] hostPort = parseTargetHost(getRequestLine());
+            // 创建服务套接字
+            Socket serverSocket = new Socket(hostPort[0], Integer.parseInt(hostPort[1]));
+            // 发送连接成功的响应给客户端
+            sendConnectionEstablishedResponse();
+            System.out.println("Connection established.");
+            // 创建并启动客户端到服务器的数据传输线程
+            Thread clientToServerThread = createRelayThread(clientSocket, serverSocket);
+            // 创建并启动服务器到客户端的数据传输线程
+            Thread serverToClientThread = createRelayThread(serverSocket, clientSocket);
+            // 启动线程
+            clientToServerThread.start();
+            serverToClientThread.start();
         } catch (Exception e) {
             System.err.println("Error handling client request: " + e.getMessage());
-        } finally {
             closeQuietly(clientSocket);
         }
     }
 
-    /**
-     * 处理客户端请求
-     *
-     * @throws IOException IO异常
-     */
-    private void handleClientRequest() throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8));
-        String requestLine;
-        while (!clientSocket.isClosed() && (requestLine = reader.readLine()) != null) {
-            System.out.println("收到请求: " + requestLine);
-        }
-        /**
+    private String getRequestLine() throws IOException {
         // 读取客户端的第一行请求
         String requestLine = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8)).readLine();
-        System.out.println("收到请求: " + requestLine);
-
-        if (requestLine == null || requestLine.isEmpty()) {
-            System.err.println("Invalid request line: " + requestLine);
-            return;
-        }
-
-        // 解析目标主机和端口
-        String[] hostPort = parseTargetHost(requestLine);
-        if (hostPort == null) {
-            System.err.println("Invalid target host:port: " + requestLine);
-            return;
-        }
-
-        // 连接目标服务器并转发数据
-        connectAndRelayData(hostPort[0], Integer.parseInt(hostPort[1]));
-         **/
+        if (requestLine == null || requestLine.isEmpty())
+            throw new RuntimeException("Invalid request line: " + requestLine);
+        return requestLine;
     }
 
     /**
@@ -66,49 +54,14 @@ public record ClientConnectionHandler(Socket clientSocket) implements Connection
      */
     private String[] parseTargetHost(String requestLine) {
         String[] parts = requestLine.split(" ");
-        if (parts.length < 2) {
-            System.err.println("Invalid request line: " + requestLine);
-            return null;
-        }
+        if (parts.length < 2)
+            throw new RuntimeException("Invalid request line: " + requestLine);
 
         String[] hostPort = parts[1].split(":");
-        if (hostPort.length < 2) {
-            System.err.println("Invalid host:port format: " + parts[1]);
-            return null;
-        }
+        if (hostPort.length < 2)
+            throw new RuntimeException("Invalid target host: " + parts[1]);
 
         return hostPort;
-    }
-
-    /**
-     * 连接目标服务器并转发数据
-     *
-     * @param host 目标主机
-     * @param port 目标端口
-     * @throws IOException IO异常
-     */
-    private void connectAndRelayData(String host, int port) throws IOException {
-        Socket serverSocket = new Socket(host, port);
-        // 发送连接成功的响应给客户端
-        sendConnectionEstablishedResponse();
-
-        // 创建并启动客户端到服务器的数据传输线程
-        Thread clientToServerThread = createRelayThread(clientSocket, serverSocket);
-
-        // 创建并启动服务器到客户端的数据传输线程
-        Thread serverToClientThread = createRelayThread(serverSocket, clientSocket);
-
-        // 启动线程
-        clientToServerThread.start();
-        serverToClientThread.start();
-
-        // 等待两个线程完成
-        try {
-            clientToServerThread.join();
-            serverToClientThread.join();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
     }
 
     /**
@@ -119,7 +72,6 @@ public record ClientConnectionHandler(Socket clientSocket) implements Connection
     private void sendConnectionEstablishedResponse() throws IOException {
         String response = "HTTP/1.1 200 Established\r\nProxy-Agent: Simple-Http-Proxy/1.0\r\n\r\n";
         clientSocket.getOutputStream().write(response.getBytes(StandardCharsets.UTF_8));
-        System.out.println("Connection established.");
     }
 
     /**
@@ -132,31 +84,19 @@ public record ClientConnectionHandler(Socket clientSocket) implements Connection
     private Thread createRelayThread(Socket source, Socket destination) {
         return new Thread(() -> {
             try {
-                relayData(source, destination);
-            } catch (IOException e) {
-                // 连接关闭或发生错误是正常情况
+                byte[] buffer = new byte[BUFFER_SIZE];
+                int bytesRead;
+                while ((bytesRead = source.getInputStream().read(buffer)) != -1) {
+                    destination.getOutputStream().write(buffer, 0, bytesRead);
+                    destination.getOutputStream().flush();
+                }
+            } catch (Exception e) {
+                System.err.println("Error relaying data: " + e.getMessage());
             } finally {
                 closeQuietly(source);
                 closeQuietly(destination);
             }
         });
-    }
-
-    /**
-     * 在两个套接字之间转发数据
-     *
-     * @param source      源套接字
-     * @param destination 目标套接字
-     * @throws IOException IO异常
-     */
-    private void relayData(Socket source, Socket destination) throws IOException {
-        byte[] buffer = new byte[BUFFER_SIZE];
-        int bytesRead;
-        while (!source.isClosed() && !destination.isClosed()
-                && (bytesRead = source.getInputStream().read(buffer)) != -1) {
-            destination.getOutputStream().write(buffer, 0, bytesRead);
-            destination.getOutputStream().flush();
-        }
     }
 
     /**
