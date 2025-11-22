@@ -19,7 +19,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @Component
 public class HttpProxyServer implements CommandLineRunner {
 
-    private static final int DEFAULT_PORT = 3000;
+    private static final int DEFAULT_PORT = 443;
     private volatile ServerSocket serverSocket;
 
     private static final ThreadPoolExecutor bossThreadPool =
