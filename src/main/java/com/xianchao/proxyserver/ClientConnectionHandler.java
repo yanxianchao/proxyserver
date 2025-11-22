@@ -41,6 +41,7 @@ public record ClientConnectionHandler(Socket clientSocket) implements Connection
     private String getRequestLine() throws IOException {
         // 读取客户端的第一行请求
         String requestLine = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8)).readLine();
+        System.out.println("Request line: " + requestLine);
         if (requestLine == null || requestLine.isEmpty())
             throw new RuntimeException("Invalid request line: " + requestLine);
         return requestLine;
